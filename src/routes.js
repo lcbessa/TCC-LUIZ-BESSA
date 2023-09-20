@@ -1,6 +1,6 @@
 import { Router } from "express";
-import Laboratorio from "./controllers/Laboratorio";
-import Reserva from "./controllers/Reserva";
+import Laboratorio from "./controllers/LaboratorioController";
+import Reserva from "./controllers/ReservaController";
 const routes = Router();
 /**
  * Rotas para Laboratórios

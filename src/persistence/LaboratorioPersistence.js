@@ -1,44 +1,22 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
 export default {
-  async criarLaboratorio(request, response) {
+  async criarLaboratorio(newLab) {
     try {
-      const { nome, sigla } = request.body;
-
-      const laboratorioComNome = await prisma.laboratorio.findFirst({
-        where: { nome },
-      });
-
-      if (laboratorioComNome) {
-        return response
-          .status(400)
-          .send({ error: "Laboratório com mesmo nome já existe!" });
-      }
-
-      const laboratorioComSigla = await prisma.laboratorio.findFirst({
-        where: { sigla },
-      });
-
-      if (laboratorioComSigla) {
-        return response
-          .status(400)
-          .send({ error: "Laboratório com mesma sigla já existe!" });
-      }
-
       const laboratorioCriado = await prisma.laboratorio.create({
-        data: {
-          nome,
-          sigla,
-        },
+        data: newLab,
       });
-      return response.status(201).json(laboratorioCriado);
+      return {
+        status: 201,
+        sucess: laboratorioCriado,
+      };
     } catch (error) {
       console.error("Erro ao criar laboratório", error);
-      return response
-        .status(500)
-        .send({ error: "Não foi possível criar um laboratório!" });
+      return {
+        status: 500,
+        error: "Não foi possível criar um laboratório!",
+      };
     }
   },
   async listarLaboratorios(request, response) {
@@ -76,6 +54,53 @@ export default {
         .send({ error: "Não foi possível listar laboratório!" });
     }
   },
+  async getLaboratorioByName(nome) {
+    try {
+      const laboratorio = await prisma.laboratorio.findFirst({
+        where: { nome },
+      });
+      if (!laboratorio) {
+        return {
+          status: 404,
+          error: "Nome não encontrado.",
+        };
+      }
+      return {
+        status: 200,
+        sucess: laboratorio,
+      };
+    } catch (error) {
+      console.error("Erro ao listar laboratório pelo nome!", error);
+      return {
+        status: 500,
+        error: "Não foi possível listar laboratório pelo nome!",
+      };
+    }
+  },
+  async getLaboratorioBySigla(sigla) {
+    try {
+      const laboratorio = await prisma.laboratorio.findFirst({
+        where: { sigla },
+      });
+      if (!laboratorio) {
+        return {
+          status: 404,
+          error: "Sigla não encontrado.",
+        };
+      }
+      return {
+        status: 200,
+        sucess: laboratorio,
+      };
+    } catch (error) {
+      console.error("Erro ao listar laboratório pela sigla", error);
+      return {
+        status: 500,
+        error: "Não foi possível listar laboratório pela sigla!",
+      };
+    }
+  },
+
   async atualizarLaboratorio(request, response) {
     try {
       const { id } = request.params;
