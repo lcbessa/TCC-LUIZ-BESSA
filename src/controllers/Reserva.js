@@ -27,7 +27,7 @@ export default {
         });
       }
 
-      const reservaConflitante = await prisma.reserva.findUnique({
+      const reservaConflitante = await prisma.reserva.findFirst({
         where: {
           laboratorioId,
           dataReserva: dataFormatada,
