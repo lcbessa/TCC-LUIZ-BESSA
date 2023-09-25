@@ -1,4 +1,4 @@
-# crud-node-prisma
+# crud-sem-isolamento-de-regras-de-negocio
 ## Pré- requisitos
 
 Certifique-se de ter os seguintes requisitos instalados:
