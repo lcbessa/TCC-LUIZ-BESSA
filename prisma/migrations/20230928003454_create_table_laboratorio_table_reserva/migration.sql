@@ -1,8 +1,9 @@
 -- CreateTable
 CREATE TABLE "Laboratorio" (
     "id" SERIAL NOT NULL,
-    "nome" TEXT NOT NULL,
-    "sigla" TEXT NOT NULL,
+    "nome" VARCHAR(100) NOT NULL,
+    "sigla" VARCHAR(10) NOT NULL,
+    "ativo" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "Laboratorio_pkey" PRIMARY KEY ("id")
 );
@@ -10,7 +11,8 @@ CREATE TABLE "Laboratorio" (
 -- CreateTable
 CREATE TABLE "Reserva" (
     "id" SERIAL NOT NULL,
-    "dataReserva" TIMESTAMP(3) NOT NULL,
+    "dataHoraInicio" TIMESTAMP(3) NOT NULL,
+    "dataHoraFim" TIMESTAMP(3) NOT NULL,
     "laboratorioId" INTEGER NOT NULL,
 
     CONSTRAINT "Reserva_pkey" PRIMARY KEY ("id")

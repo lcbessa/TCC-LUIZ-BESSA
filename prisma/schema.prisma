@@ -11,15 +11,17 @@ datasource db {
 }
 
 model Laboratorio {
-  id       Int       @id @default(autoincrement())
-  nome     String    @unique
-  sigla    String    @unique
+  id       Int       @id @default(autoincrement()) @map(name: "id")
+  nome     String    @unique @map(name: "nome") @db.VarChar(100)
+  sigla    String    @unique @map(name: "sigla") @db.VarChar(10)
+  ativo    Boolean   @default(true)
   reservas Reserva[]
 }
 
 model Reserva {
-  id            Int         @id @default(autoincrement())
-  dataReserva   DateTime
-  laboratorioId Int
-  laboratorio   Laboratorio @relation(fields: [laboratorioId], references: [id])
+  id             Int         @id @default(autoincrement()) @map(name: "id")
+  dataHoraInicio DateTime    @map(name: "dataHoraInicio")
+  dataHoraFim    DateTime    @map(name: "dataHoraFim")
+  laboratorioId  Int         @map(name: "laboratorioId")
+  laboratorio    Laboratorio @relation(fields: [laboratorioId], references: [id])
 }
