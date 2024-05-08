@@ -25,7 +25,7 @@ Siga os passos abaixo para iniciar a aplicação:
 
 4. Aplique as migrações de banco de dados:
    
-    `npx migrate dev`
+    `npx prisma migrate dev`
 
 5. Inicie a aplicação:
    
