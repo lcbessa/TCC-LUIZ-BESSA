@@ -10,11 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Usuario {
+  id       Int       @id @default(autoincrement()) @map(name: "id")
+  nome     String    @map(name: "nome") @db.VarChar(100)
+  email    String    @unique @map(name: "email") @db.VarChar(50)
+  senha    String    @map(name: "senha") @db.VarChar(50)
+  admin    Boolean   @default(false)
+  reservas Reserva[]
+}
+
 model Laboratorio {
   id       Int       @id @default(autoincrement()) @map(name: "id")
+  ativo    Boolean   @default(true)
   nome     String    @unique @map(name: "nome") @db.VarChar(100)
   sigla    String    @unique @map(name: "sigla") @db.VarChar(10)
-  ativo    Boolean   @default(true)
   reservas Reserva[]
 }
 
@@ -24,4 +33,6 @@ model Reserva {
   dataHoraFim    DateTime    @map(name: "dataHoraFim")
   laboratorioId  Int         @map(name: "laboratorioId")
   laboratorio    Laboratorio @relation(fields: [laboratorioId], references: [id])
+  usuarioId      Int         @map(name: "usuarioId")
+  usuario        Usuario     @relation(fields: [usuarioId], references: [id])
 }

@@ -14,21 +14,21 @@ export default {
     try {
       const { dataHoraInicio, dataHoraFim, laboratorioId } = request.body;
 
-      // [RN006] Relação com Laboratório (Verifica se o laboratório existe)
+      // Relação com Laboratório (Verifica se o laboratório está ativo)
       const laboratorio = await prisma.laboratorio.findUnique({
         where: { id: laboratorioId },
       });
 
-      if (!laboratorio) {
+      if (!laboratorio.ativo) {
         return response
           .status(400)
-          .send({ error: "Laboratório não encontrado." });
+          .send({ error: "Laboratório não encontrado ou inativo." });
       }
 
       const dataInicio = new Date(dataHoraInicio);
       const dataFim = new Date(dataHoraFim);
       const dataAtual = new Date();
-      dataAtual.setHours(dataAtual.getHours() - 3);
+      dataAtual.setHours(dataAtual.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
 
       // Verificar se as datas e horas são válidas
       if (!isValid(dataInicio) || !isValid(dataFim)) {
@@ -45,14 +45,14 @@ export default {
         });
       }
 
-      // [RN007] Reservas não devem possuir dataHoraInicio e dataHoraFim nulos
+      // Reservas não devem possuir dataHoraInicio e dataHoraFim devem ser obrigatórios
       if (!dataHoraInicio || !dataHoraFim) {
         return response.status(400).send({
           error: "As datas de início e fim da reserva devem ser fornecidas.",
         });
       }
 
-      // [RN008] Reservas Futuras Apenas
+      // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
       if (isBefore(dataInicio, dataAtual)) {
         return response.status(400).send({
           error:
@@ -60,13 +60,13 @@ export default {
         });
       }
 
-      // 	[RN009] Reserva no Mesmo Dia
+      // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
       if (!isSameDay(dataInicio, dataFim)) {
         return response.status(400).send({
           error: "A reserva deve começar e terminar no mesmo dia.",
         });
       }
-      // [RN010] Duração Mínima de Reserva
+      // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
       const diferencaEmMinutos = differenceInMinutes(dataFim, dataInicio);
       if (diferencaEmMinutos < 60) {
         return response
@@ -74,7 +74,7 @@ export default {
           .send({ error: "A reserva deve ter no mínimo 1 hora de duração." });
       }
 
-      // 	[RN011] - Restrição de horário da Reserva:
+      // 	Restrição de horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
       if (
         getMinutes(dataInicio) % 30 !== 0 ||
         getMinutes(dataFim) % 30 !== 0 ||
@@ -87,7 +87,7 @@ export default {
         });
       }
 
-      // [RN011] Restrição de Conflito de Horários de Reserva
+      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
       const conflito = await prisma.reserva.findFirst({
         where: {
           laboratorioId,
@@ -124,7 +124,12 @@ export default {
         data: {
           dataHoraInicio,
           dataHoraFim,
-          laboratorioId,
+          laboratorio: {
+            connect: { id: laboratorioId },
+          },
+          usuario: {
+            connect: { id: request.usuarioId },
+          },
         },
       });
 
@@ -141,7 +146,16 @@ export default {
       const { id } = request.params;
       const reserva = await prisma.reserva.findUnique({
         where: { id: Number(id) },
-        include: { laboratorio: true },
+        include: {
+          laboratorio: true,
+          usuario: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
+          },
+        },
       });
 
       if (!reserva) {
@@ -159,9 +173,20 @@ export default {
   async listarReservas(request, response) {
     try {
       const reservas = await prisma.reserva.findMany({
-        include: { laboratorio: true },
+        orderBy: {
+          dataHoraInicio: "asc",
+        },
+        include: {
+          laboratorio: true,
+          usuario: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
+          },
+        },
       });
-
       return response.status(200).json(reservas);
     } catch (error) {
       console.error("Erro ao listar reservas", error);
@@ -175,7 +200,7 @@ export default {
       const { id } = request.params; // Recebe o ID da reserva a ser atualizada
       const { dataHoraInicio, dataHoraFim } = request.body;
 
-      // [RN006] Relação com Laboratório (Verifica se o laboratório existe)
+      // Verifica se a reserva existe
       const reserva = await prisma.reserva.findUnique({
         where: { id: Number(id) },
       });
@@ -184,6 +209,12 @@ export default {
         return response.status(400).send({ error: "Reserva não encontrada." });
       }
 
+      // Verifica se o usuário que está tentando atualizar a reserva é o mesmo que a criou
+      if (reserva.usuarioId !== request.usuarioId) {
+        return response.status(403).send({
+          error: "Apenas o usuário que criou a reserva pode atualizá-la.",
+        });
+      }
       const dataInicio = new Date(dataHoraInicio);
       const dataFim = new Date(dataHoraFim);
       const dataAtual = new Date();
@@ -204,7 +235,7 @@ export default {
         });
       }
 
-      // [RN008] Reservas Futuras Apenas
+      // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
       if (isBefore(dataInicio, dataAtual)) {
         return response.status(400).send({
           error:
@@ -212,20 +243,20 @@ export default {
         });
       }
 
-      // [RN009] Reserva no Mesmo Dia
+      // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
       if (!isSameDay(dataInicio, dataFim)) {
         return response.status(400).send({
           error: "A reserva deve começar e terminar no mesmo dia.",
         });
       }
-      // [RN010] Duração Mínima de Reserva
+      // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
       const diferencaEmMinutos = differenceInMinutes(dataFim, dataInicio);
       if (diferencaEmMinutos < 60) {
         return response
           .status(400)
           .send({ error: "A reserva deve ter no mínimo 1 hora de duração." });
       }
-      // [RN011] - Restrição de horário da Reserva:
+      // Condicao de Horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
       if (
         getMinutes(dataInicio) % 30 !== 0 ||
         getMinutes(dataFim) % 30 !== 0 ||
@@ -238,7 +269,7 @@ export default {
         });
       }
 
-      // [RN011] Restrição de Conflito de Horários de Reserva
+      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
       const conflito = await prisma.reserva.findFirst({
         where: {
           OR: [
@@ -291,6 +322,7 @@ export default {
   async deletarReserva(request, response) {
     try {
       const { id } = request.params;
+
       const reserva = await prisma.reserva.findUnique({
         where: { id: Number(id) },
       });
@@ -299,18 +331,42 @@ export default {
         return response.status(404).send({ error: "Reserva não encontrada." });
       }
 
+      // Verifica se o usuário que está tentando cancelar a reserva é o mesmo que a criou
+      if (reserva.usuarioId !== request.usuarioId) {
+        return response.status(403).send({
+          error: "Apenas o usuário que criou a reserva pode deletá-la.",
+        });
+      }
+
+      // Se o cancelamento da reserva for feito com menos de 1 hora de antecedência, a reserva não poderá ser cancelada.
+      const dataAtualDoCancelamento = new Date();
+      dataAtualDoCancelamento.setHours(dataAtualDoCancelamento.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
+      const dataInicioDaReservaQuePoderaSerCancelada = new Date(
+        reserva.dataHoraInicio
+      );
+      const diferencaEmMinutos = differenceInMinutes(
+        dataInicioDaReservaQuePoderaSerCancelada,
+        dataAtualDoCancelamento
+      );
+      if (diferencaEmMinutos < 60) {
+        return response.status(400).send({
+          error:
+            "A reserva não pode ser cancelada com menos de 1 hora de antecedência.",
+        });
+      }
+
       await prisma.reserva.delete({
         where: { id: Number(id) },
       });
 
       return response
         .status(200)
-        .send({ message: "Reserva excluída com sucesso." });
+        .send({ message: "Reserva cancelada com sucesso." });
     } catch (error) {
-      console.error("Erro ao excluir reserva", error);
+      console.error("Erro ao cancelar reserva", error);
       return response
         .status(500)
-        .send({ error: "Erro interno ao excluir a reserva." });
+        .send({ error: "Erro interno ao cancelar a reserva." });
     }
   },
 };
