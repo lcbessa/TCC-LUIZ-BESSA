@@ -7,6 +7,121 @@ import {
   getMinutes,
 } from "date-fns";
 
+// Função para verificar se as datas são válidas e a data de início é menor que a data de fim
+const verificarDatasValidas = (dataInicio, dataFim, response) => {
+  if (!isValid(dataInicio) || !isValid(dataFim) || dataInicio > dataFim) {
+    return response
+      .status(400)
+      .send({ error: "Datas de início e fim não são válidas." });
+  }
+};
+
+// Função para verificar se a reserva é futura (data de inicio é depois da data atual)
+const verificarReservaFutura = (dataInicio, dataAtual, response) => {
+  if (!isBefore(dataAtual, dataInicio)) {
+    return response
+      .status(400)
+      .send({ error: "A data da reserva deve ser futura." });
+  }
+};
+
+// Função para verificar se a reserva é no mesmo dia (data de início e fim iguais)
+const verificarReservaMesmoDia = (dataInicio, dataFim, response) => {
+  if (!isSameDay(dataInicio, dataFim)) {
+    return response
+      .status(400)
+      .send({ error: "A reserva deve começar e terminar no mesmo dia." });
+  }
+};
+
+// Função para verificar a duração mínima da reserva (1 hora)
+const verificarDuracaoMinima = (dataInicio, dataFim, response) => {
+  const diferencaEmMinutos = differenceInMinutes(dataFim, dataInicio);
+  if (diferencaEmMinutos < 60) {
+    return response
+      .status(400)
+      .send({ error: "A reserva deve ter no mínimo 1 hora de duração." });
+  }
+};
+
+// Função para verificar a restrição de horário da reserva (em horas cheias ou meias horas)
+const verificarRestricaoHorario = (dataInicio, dataFim, response) => {
+  if (
+    getMinutes(dataInicio) % 30 !== 0 ||
+    getMinutes(dataFim) % 30 !== 0 ||
+    dataInicio.getSeconds() !== 0 ||
+    dataFim.getSeconds() !== 0
+  ) {
+    return response.status(400).send({
+      error:
+        "A reserva deve começar e terminar em horas cheias ou meias horas.",
+    });
+  }
+};
+
+// Função para verificar conflitos de horários de reserva no mesmo laboratório
+const verificarConflitoHorario = async (
+  prisma,
+  laboratorioId,
+  dataInicio,
+  dataFim,
+  idExclusao,
+  response
+) => {
+  const conflito = await prisma.reserva.findFirst({
+    where: {
+      laboratorioId,
+      NOT: { id: idExclusao },
+      OR: [
+        {
+          AND: [
+            { dataHoraInicio: { lte: dataInicio } },
+            { dataHoraFim: { gte: dataInicio } },
+          ],
+        },
+        {
+          AND: [
+            { dataHoraInicio: { lte: dataFim } },
+            { dataHoraFim: { gte: dataFim } },
+          ],
+        },
+        {
+          AND: [
+            { dataHoraInicio: { gte: dataInicio } },
+            { dataHoraFim: { lte: dataFim } },
+          ],
+        },
+      ],
+    },
+  });
+
+  if (conflito) {
+    return response
+      .status(400)
+      .send({ error: "Conflito de horários de reserva." });
+  }
+};
+
+// Função para verificar cancelamento com antecedência mínima de 1 hora
+const verificarCancelamentoAntecedencia = (
+  dataInicioDaReserva,
+  dataAtualDoCancelamento,
+  response
+) => {
+  const diferencaEmMinutos = differenceInMinutes(
+    dataInicioDaReserva,
+    dataAtualDoCancelamento
+  );
+  if (diferencaEmMinutos < 60) {
+    return response.status(400).send({
+      error:
+        "O cancelamento deve ser feito com pelo menos 1 hora de antecedência.",
+    });
+  }
+};
+
+import { PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 export default {
@@ -14,15 +129,26 @@ export default {
     try {
       const { dataHoraInicio, dataHoraFim, laboratorioId } = request.body;
 
-      // Relação com Laboratório (Verifica se o laboratório está ativo)
+      if (!laboratorioId) {
+        return response
+          .status(400)
+          .send({ error: "ID do laboratório é necessário." });
+      }
+
       const laboratorio = await prisma.laboratorio.findUnique({
         where: { id: laboratorioId },
       });
 
+      if (!laboratorio) {
+        return response
+          .status(404)
+          .send({ error: "Laboratório não encontrado." });
+      }
+
       if (!laboratorio.ativo) {
         return response
           .status(400)
-          .send({ error: "Laboratório não encontrado ou inativo." });
+          .send({ error: "Laboratório está inativo." });
       }
 
       const dataInicio = new Date(dataHoraInicio);
@@ -30,106 +156,39 @@ export default {
       const dataAtual = new Date();
       dataAtual.setHours(dataAtual.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
 
-      // Verificar se as datas e horas são válidas
-      if (!isValid(dataInicio) || !isValid(dataFim)) {
-        return response.status(400).send({
-          error: "As datas de início e fim da reserva não são válidas.",
-        });
-      }
+      let resultado;
 
-      // Verificar se a data e hora de início são menores ou iguais à data e hora de fim.
-      if (dataInicio > dataFim) {
-        return response.status(400).send({
-          error:
-            "A data e hora de início não podem ser maiores que a data e hora de fim.",
-        });
-      }
+      resultado = verificarDatasValidas(dataInicio, dataFim, response);
+      if (resultado) return; // Se resultado existe, a resposta já foi enviada
 
-      // Reservas não devem possuir dataHoraInicio e dataHoraFim devem ser obrigatórios
-      if (!dataHoraInicio || !dataHoraFim) {
-        return response.status(400).send({
-          error: "As datas de início e fim da reserva devem ser fornecidas.",
-        });
-      }
+      resultado = verificarReservaFutura(dataInicio, dataAtual, response);
+      if (resultado) return;
 
-      // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
-      if (isBefore(dataInicio, dataAtual)) {
-        return response.status(400).send({
-          error:
-            "A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.",
-        });
-      }
+      resultado = verificarReservaMesmoDia(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
-      if (!isSameDay(dataInicio, dataFim)) {
-        return response.status(400).send({
-          error: "A reserva deve começar e terminar no mesmo dia.",
-        });
-      }
-      // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
-      const diferencaEmMinutos = differenceInMinutes(dataFim, dataInicio);
-      if (diferencaEmMinutos < 60) {
-        return response
-          .status(400)
-          .send({ error: "A reserva deve ter no mínimo 1 hora de duração." });
-      }
+      resultado = verificarDuracaoMinima(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // 	Restrição de horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
-      if (
-        getMinutes(dataInicio) % 30 !== 0 ||
-        getMinutes(dataFim) % 30 !== 0 ||
-        dataInicio.getSeconds() !== 0 ||
-        dataFim.getSeconds() !== 0
-      ) {
-        return response.status(400).send({
-          error:
-            "A reserva deve começar e terminar em horas cheias ou meias horas.",
-        });
-      }
+      resultado = verificarRestricaoHorario(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
-      const conflito = await prisma.reserva.findFirst({
-        where: {
-          laboratorioId,
-          OR: [
-            {
-              AND: [
-                { dataHoraInicio: { lte: dataInicio } }, // Início da primeira reserva é anterior ou igual ao início da nova reserva
-                { dataHoraFim: { gte: dataInicio } }, // Fim da primeira reserva é posterior ou igual ao início da nova reserva
-              ],
-            },
-            {
-              AND: [
-                { dataHoraInicio: { lte: dataFim } }, // Início da primeira reserva é anterior ou igual ao fim da nova reserva
-                { dataHoraFim: { gte: dataFim } }, // Fim da primeira reserva é posterior ou igual ao fim da nova reserva
-              ],
-            },
-            {
-              AND: [
-                { dataHoraInicio: { gte: dataInicio } }, // Início da primeira reserva é posterior ou igual ao início da nova reserva
-                { dataHoraFim: { lte: dataFim } }, // Fim da primeira reserva é anterior ou igual ao fim da nova reserva
-              ],
-            },
-          ],
-        },
-      });
-
-      if (conflito) {
-        return response
-          .status(400)
-          .send({ error: "Conflito de horários de reserva." });
-      }
+      resultado = await verificarConflitoHorario(
+        prisma,
+        laboratorioId,
+        dataInicio,
+        dataFim,
+        null,
+        response
+      );
+      if (resultado) return;
 
       const reservaCriada = await prisma.reserva.create({
         data: {
           dataHoraInicio,
           dataHoraFim,
-          laboratorio: {
-            connect: { id: laboratorioId },
-          },
-          usuario: {
-            connect: { id: request.usuarioId },
-          },
+          laboratorio: { connect: { id: laboratorioId } },
+          usuario: { connect: { id: request.usuarioId } },
         },
       });
 
@@ -141,6 +200,7 @@ export default {
         .send({ error: "Não foi possível criar a reserva." });
     }
   },
+
   async listarUmaReserva(request, response) {
     try {
       const { id } = request.params;
@@ -148,13 +208,7 @@ export default {
         where: { id: Number(id) },
         include: {
           laboratorio: true,
-          usuario: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-            },
-          },
+          usuario: { select: { id: true, nome: true, email: true } },
         },
       });
 
@@ -170,21 +224,14 @@ export default {
         .send({ error: "Não foi possível listar a reserva." });
     }
   },
+
   async listarReservas(request, response) {
     try {
       const reservas = await prisma.reserva.findMany({
-        orderBy: {
-          dataHoraInicio: "asc",
-        },
+        orderBy: { dataHoraInicio: "asc" },
         include: {
           laboratorio: true,
-          usuario: {
-            select: {
-              id: true,
-              nome: true,
-              email: true,
-            },
-          },
+          usuario: { select: { id: true, nome: true, email: true } },
         },
       });
       return response.status(200).json(reservas);
@@ -195,120 +242,61 @@ export default {
         .send({ error: "Não foi possível listar as reservas." });
     }
   },
+
   async atualizarReserva(request, response) {
     try {
-      const { id } = request.params; // Recebe o ID da reserva a ser atualizada
+      const { id } = request.params;
       const { dataHoraInicio, dataHoraFim } = request.body;
 
-      // Verifica se a reserva existe
       const reserva = await prisma.reserva.findUnique({
         where: { id: Number(id) },
       });
 
       if (!reserva) {
-        return response.status(400).send({ error: "Reserva não encontrada." });
+        return response.status(404).send({ error: "Reserva não encontrada." });
       }
 
-      // Verifica se o usuário que está tentando atualizar a reserva é o mesmo que a criou
       if (reserva.usuarioId !== request.usuarioId) {
         return response.status(403).send({
           error: "Apenas o usuário que criou a reserva pode atualizá-la.",
         });
       }
+
       const dataInicio = new Date(dataHoraInicio);
       const dataFim = new Date(dataHoraFim);
       const dataAtual = new Date();
       dataAtual.setHours(dataAtual.getHours() - 3);
 
-      // Verificar se as datas e horas são válidas
-      if (!isValid(dataInicio) || !isValid(dataFim)) {
-        return response.status(400).send({
-          error: "As datas de início e fim da reserva não são válidas.",
-        });
-      }
+      let resultado;
 
-      // Verificar se a data e hora de início são menores ou iguais à data e hora de fim.
-      if (dataInicio > dataFim) {
-        return response.status(400).send({
-          error:
-            "A data e hora de início não podem ser maiores que a data e hora de fim.",
-        });
-      }
+      resultado = verificarDatasValidas(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
-      if (isBefore(dataInicio, dataAtual)) {
-        return response.status(400).send({
-          error:
-            "A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.",
-        });
-      }
+      resultado = verificarReservaFutura(dataInicio, dataAtual, response);
+      if (resultado) return;
 
-      // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
-      if (!isSameDay(dataInicio, dataFim)) {
-        return response.status(400).send({
-          error: "A reserva deve começar e terminar no mesmo dia.",
-        });
-      }
-      // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
-      const diferencaEmMinutos = differenceInMinutes(dataFim, dataInicio);
-      if (diferencaEmMinutos < 60) {
-        return response
-          .status(400)
-          .send({ error: "A reserva deve ter no mínimo 1 hora de duração." });
-      }
-      // Condicao de Horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
-      if (
-        getMinutes(dataInicio) % 30 !== 0 ||
-        getMinutes(dataFim) % 30 !== 0 ||
-        dataInicio.getSeconds() !== 0 ||
-        dataFim.getSeconds() !== 0
-      ) {
-        return response.status(400).send({
-          error:
-            "A reserva deve começar e terminar em horas cheias ou meias horas.",
-        });
-      }
+      resultado = verificarReservaMesmoDia(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
-      const conflito = await prisma.reserva.findFirst({
-        where: {
-          OR: [
-            {
-              AND: [
-                { dataHoraInicio: { lte: dataInicio } }, // Início da primeira reserva é anterior ou igual ao início da nova reserva
-                { dataHoraFim: { gte: dataInicio } }, // Fim da primeira reserva é posterior ou igual ao início da nova reserva
-              ],
-            },
-            {
-              AND: [
-                { dataHoraInicio: { lte: dataFim } }, // Início da primeira reserva é anterior ou igual ao fim da nova reserva
-                { dataHoraFim: { gte: dataFim } }, // Fim da primeira reserva é posterior ou igual ao fim da nova reserva
-              ],
-            },
-            {
-              AND: [
-                { dataHoraInicio: { gte: dataInicio } }, // Início da primeira reserva é posterior ou igual ao início da nova reserva
-                { dataHoraFim: { lte: dataFim } }, // Fim da primeira reserva é anterior ou igual ao fim da nova reserva
-              ],
-            },
-          ],
-          NOT: { id: Number(id) }, // Exclui a própria reserva da verificação de conflitos
-        },
-      });
+      resultado = verificarDuracaoMinima(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      if (conflito) {
-        return response
-          .status(400)
-          .send({ error: "Conflito de horários de reserva." });
-      }
+      resultado = verificarRestricaoHorario(dataInicio, dataFim, response);
+      if (resultado) return;
 
-      // Atualiza a reserva no banco de dados
+      resultado = await verificarConflitoHorario(
+        prisma,
+        reserva.laboratorioId,
+        dataInicio,
+        dataFim,
+        Number(id),
+        response
+      );
+      if (resultado) return;
+
       const reservaAtualizada = await prisma.reserva.update({
         where: { id: Number(id) },
-        data: {
-          dataHoraInicio,
-          dataHoraFim,
-        },
+        data: { dataHoraInicio, dataHoraFim },
       });
 
       return response.status(200).json(reservaAtualizada);
@@ -319,10 +307,10 @@ export default {
         .send({ error: "Não foi possível atualizar a reserva." });
     }
   },
+
   async deletarReserva(request, response) {
     try {
       const { id } = request.params;
-
       const reserva = await prisma.reserva.findUnique({
         where: { id: Number(id) },
       });
@@ -331,42 +319,32 @@ export default {
         return response.status(404).send({ error: "Reserva não encontrada." });
       }
 
-      // Verifica se o usuário que está tentando cancelar a reserva é o mesmo que a criou
       if (reserva.usuarioId !== request.usuarioId) {
         return response.status(403).send({
-          error: "Apenas o usuário que criou a reserva pode deletá-la.",
+          error: "Apenas o usuário que criou a reserva pode cancelá-la.",
         });
       }
 
-      // Se o cancelamento da reserva for feito com menos de 1 hora de antecedência, a reserva não poderá ser cancelada.
-      const dataAtualDoCancelamento = new Date();
-      dataAtualDoCancelamento.setHours(dataAtualDoCancelamento.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
-      const dataInicioDaReservaQuePoderaSerCancelada = new Date(
-        reserva.dataHoraInicio
+      const dataAtual = new Date();
+      dataAtual.setHours(dataAtual.getHours() - 3);
+
+      let resultado = verificarCancelamentoAntecedencia(
+        reserva.dataHoraInicio,
+        dataAtual,
+        response
       );
-      const diferencaEmMinutos = differenceInMinutes(
-        dataInicioDaReservaQuePoderaSerCancelada,
-        dataAtualDoCancelamento
-      );
-      if (diferencaEmMinutos < 60) {
-        return response.status(400).send({
-          error:
-            "A reserva não pode ser cancelada com menos de 1 hora de antecedência.",
-        });
-      }
+      if (resultado) return;
 
       await prisma.reserva.delete({
         where: { id: Number(id) },
       });
 
-      return response
-        .status(200)
-        .send({ message: "Reserva cancelada com sucesso." });
+      return response.status(204).send();
     } catch (error) {
       console.error("Erro ao cancelar reserva", error);
       return response
         .status(500)
-        .send({ error: "Erro interno ao cancelar a reserva." });
+        .send({ error: "Não foi possível cancelar a reserva." });
     }
   },
 };
