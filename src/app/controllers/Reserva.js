@@ -71,7 +71,7 @@ const verificarConflitoHorario = async (
   const conflito = await prisma.reserva.findFirst({
     where: {
       laboratorioId,
-      NOT: { id: idExclusao },
+      ...(idExclusao && { id: { not: idExclusao } }),
       OR: [
         {
           AND: [
@@ -338,8 +338,9 @@ export default {
       await prisma.reserva.delete({
         where: { id: Number(id) },
       });
-
-      return response.status(204).send();
+      return response
+        .status(201)
+        .send({ message: "Reserva cancelada com sucesso." });
     } catch (error) {
       console.error("Erro ao cancelar reserva", error);
       return response
