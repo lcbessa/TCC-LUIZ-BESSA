@@ -20,7 +20,7 @@ export default {
       };
     }
   },
-  async getLaboratorioByName(nome) {
+  async obterLaboratorioPorNome(nome) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({
         where: { nome },
@@ -43,7 +43,7 @@ export default {
       };
     }
   },
-  async getLaboratorioBySigla(sigla) {
+  async obterLaboratorioPorSigla(sigla) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({
         where: { sigla },
