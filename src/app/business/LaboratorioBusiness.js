@@ -4,8 +4,10 @@ export default {
   async criarLaboratorio(novoLaboratorio) {
     try {
       let resposta = null;
-      resposta = await this.obterLaboratorioPorNome(novoLaboratorio.nome);
-
+      resposta = await this.obterLaboratorioPorCampo(
+        "nome",
+        novoLaboratorio.nome
+      );
       if (resposta.sucess) {
         return {
           status: 400,
@@ -13,7 +15,10 @@ export default {
         };
       }
 
-      resposta = await this.obterLaboratorioPorSigla(novoLaboratorio.sigla);
+      resposta = await this.obterLaboratorioPorCampo(
+        "sigla",
+        novoLaboratorio.sigla
+      );
 
       if (resposta.sucess) {
         return {
@@ -31,10 +36,10 @@ export default {
     }
   },
 
-  async obterLaboratorioPorNome(nome) {
-    return await LaboratorioPersistence.obterLaboratorioPorNome(nome);
-  },
-  async obterLaboratorioPorSigla(sigla) {
-    return await LaboratorioPersistence.obterLaboratorioPorSigla(sigla);
+  async obterLaboratorioPorCampo(campo, nomeCampo) {
+    return await LaboratorioPersistence.obterLaboratorioPorCampo(
+      campo,
+      nomeCampo
+    );
   },
 };
