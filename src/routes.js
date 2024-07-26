@@ -3,6 +3,7 @@ import Usuario from "./app/controllers/UsuarioController";
 import Laboratorio from "./app/controllers/LaboratorioController";
 import Reserva from "./app/controllers/ReservaController";
 import { authenticateToken, authorizeAdmin } from "./app/middlewares/Auth";
+import LaboratorioController from "./app/controllers/LaboratorioController";
 
 const routes = Router();
 
@@ -29,7 +30,7 @@ routes.post(
   "/laboratorios",
   // authenticateToken,
   // authorizeAdmin,
-  Laboratorio.criarLaboratorio
+  LaboratorioController.criarLaboratorio
 );
 // Somente pessoas autenticadas podem listar laboratórios
 // routes.get("/laboratorios",
