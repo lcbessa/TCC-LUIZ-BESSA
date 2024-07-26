@@ -20,6 +20,21 @@ export default {
       };
     }
   },
+  async listarLaboratorios(ordemCrescente) {
+    try {
+      const laboratorios = await prisma.laboratorio.findMany(ordemCrescente);
+      return {
+        status: 200,
+        sucess: laboratorios,
+      };
+    } catch (error) {
+      console.error("Erro ao listar laboratórios", error);
+      return {
+        status: 500,
+        error: "Não foi possível listar os laboratórios!",
+      };
+    }
+  },
   async obterLaboratorioPorCampo(campo, nomeCampo) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({

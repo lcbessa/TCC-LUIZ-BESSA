@@ -35,7 +35,23 @@ export default {
       };
     }
   },
-
+  async listarLaboratorios() {
+    try {
+      // Listar laboratórios em ordem alfabética crescente
+      return await LaboratorioPersistence.listarLaboratorios({
+        orderBy: {
+          nome: "asc",
+        },
+        include: { reservas: true },
+      });
+    } catch (error) {
+      console.error("Erro ao listar laboratórios", error);
+      return {
+        status: 500,
+        error: "Não foi possível listar os laboratórios!",
+      };
+    }
+  },
   async obterLaboratorioPorCampo(campo, nomeCampo) {
     return await LaboratorioPersistence.obterLaboratorioPorCampo(
       campo,

@@ -33,9 +33,11 @@ routes.post(
   LaboratorioController.criarLaboratorio
 );
 // Somente pessoas autenticadas podem listar laboratórios
-// routes.get("/laboratorios",
-//   // authenticateToken,
-//   Laboratorio.listarLaboratorios);
+routes.get(
+  "/laboratorios",
+  //   // authenticateToken,
+  LaboratorioController.listarLaboratorios
+);
 
 // Somente pessoas autenticadas podem listar um laboratório
 // routes.get(

@@ -25,6 +25,18 @@ export default {
       });
     }
   },
+  async listarLaboratorios(request, response) {
+    try {
+      const resposta = await LaboratorioBusiness.listarLaboratorios();
+      return response.status(resposta.status).json(resposta);
+    } catch (error) {
+      console.error("Erro ao listar laboratórios", error);
+      return response.status(500).json({
+        status: 500,
+        error: "Não foi possível listar os laboratórios!",
+      });
+    }
+  },
 };
 // Função auxiliar para verificar se o campo obrigatório está presente
 function verificarCampoObrigatorio(valor, campo) {
