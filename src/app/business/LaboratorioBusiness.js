@@ -52,6 +52,10 @@ export default {
       };
     }
   },
+
+  async obterLaboratorioPorId(id) {
+    return await LaboratorioPersistence.obterLaboratorioPorId(id);
+  },
   async obterLaboratorioPorCampo(campo, nomeCampo) {
     return await LaboratorioPersistence.obterLaboratorioPorCampo(
       campo,

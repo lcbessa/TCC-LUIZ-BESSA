@@ -40,11 +40,11 @@ routes.get(
 );
 
 // Somente pessoas autenticadas podem listar um laboratório
-// routes.get(
-//   "/laboratorio/:id",
-//   // authenticateToken,
-//   Laboratorio.listarUmLaboratorio
-// );
+routes.get(
+  "/laboratorio/:id",
+  //   // authenticateToken,
+  LaboratorioController.listarUmLaboratorio
+);
 
 // Somente pessoas autenticadas e administradores podem atualizar laboratórios
 // routes.put(
