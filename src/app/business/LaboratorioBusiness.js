@@ -3,30 +3,22 @@ import LaboratorioPersistence from "../persistence/LaboratorioPersistence";
 export default {
   async criarLaboratorio(novoLaboratorio) {
     try {
-      let resposta = null;
-      resposta = await this.obterLaboratorioPorCampo(
+      const validacaoNome = await this.validarCampoUnico(
         null,
         "nome",
         novoLaboratorio.nome
       );
-      if (resposta.sucess) {
-        return {
-          status: 400,
-          error: "Laboratório com mesmo nome já existe.",
-        };
+      if (validacaoNome) {
+        return validacaoNome;
       }
 
-      resposta = await this.obterLaboratorioPorCampo(
+      const validacaoSigla = await this.validarCampoUnico(
         null,
         "sigla",
         novoLaboratorio.sigla
       );
-
-      if (resposta.sucess) {
-        return {
-          status: 400,
-          error: "Laboratório com mesma sigla já existe.",
-        };
+      if (validacaoSigla) {
+        return validacaoSigla;
       }
       return await LaboratorioPersistence.criarLaboratorio(novoLaboratorio);
     } catch (error) {
@@ -56,16 +48,16 @@ export default {
   },
   async listarUmLaboratorio(id) {
     try {
-      let resposta = null;
-      resposta = await this.obterLaboratorioPorId(id);
-      if (!resposta.sucess) {
+      const laboratorioProcurado = await this.obterLaboratorioPorId(id);
+      if (!laboratorioProcurado.sucess) {
         return {
-          status: 404,
+          status: 400,
           error: "Laboratório não encontrado!",
         };
       }
+      return laboratorioProcurado;
     } catch (error) {
-      console.error("Erro ao listar laboratório", error);
+      console.error("Erro ao listar laboratórioAQ", error);
       return {
         status: 500,
         error: "Não foi possível listar o laboratório!",
@@ -74,42 +66,31 @@ export default {
   },
   async atualizarLaboratorio(id, laboratorioASerAtualizado) {
     try {
-      let resposta = null;
-      resposta = await this.obterLaboratorioPorId(id);
+      const laboratorioProcurado = await this.obterLaboratorioPorId(id);
 
-      if (!resposta.sucess || !resposta.sucess.ativo) {
+      if (!laboratorioProcurado.sucess || !laboratorioProcurado.sucess.ativo) {
         return {
           status: 404,
           error: "Laboratório não encontrado ou inativo!",
         };
       }
 
-      resposta = await this.obterLaboratorioPorCampo(
+      const validacaoNome = await this.validarCampoUnico(
         id,
         "nome",
         laboratorioASerAtualizado.nome
       );
-
-      if (resposta.sucess) {
-        return {
-          status: 400,
-          error: "Laboratório com mesmo nome já existe.",
-        };
+      if (validacaoNome) {
+        return validacaoNome;
       }
-
-      resposta = await this.obterLaboratorioPorCampo(
+      const validacaoSigla = await this.validarCampoUnico(
         id,
         "sigla",
         laboratorioASerAtualizado.sigla
       );
-
-      if (resposta.sucess) {
-        return {
-          status: 400,
-          error: "Laboratório com mesma sigla já existe.",
-        };
+      if (validacaoSigla) {
+        return validacaoSigla;
       }
-
       return await LaboratorioPersistence.atualizarLaboratorio(
         id,
         laboratorioASerAtualizado
@@ -168,11 +149,19 @@ export default {
   async obterLaboratorioPorId(id) {
     return await LaboratorioPersistence.obterLaboratorioPorId(id);
   },
-  async obterLaboratorioPorCampo(id, campo, nomeCampo) {
-    return await LaboratorioPersistence.obterLaboratorioPorCampo(
-      id,
-      campo,
-      nomeCampo
-    );
+  async validarCampoUnico(id, campo, valorCampo) {
+    const campoProcurado =
+      await LaboratorioPersistence.obterLaboratorioPorCampo(
+        id,
+        campo,
+        valorCampo
+      );
+    if (campoProcurado.sucess) {
+      return {
+        status: 400,
+        error: `${campo} já existente.`,
+      };
+    }
+    return null;
   },
 };

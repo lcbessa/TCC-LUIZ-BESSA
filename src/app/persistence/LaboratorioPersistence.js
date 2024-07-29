@@ -111,10 +111,10 @@ export default {
       };
     }
   },
-  async obterLaboratorioPorCampo(id, campo, nomeCampo) {
+  async obterLaboratorioPorCampo(id, campo, valorCampo) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({
-        where: { [campo]: nomeCampo, NOT: { id: Number(id) } },
+        where: { [campo]: valorCampo, NOT: { id: Number(id) } },
       });
       return {
         status: 200,
