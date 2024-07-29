@@ -47,12 +47,12 @@ routes.get(
 );
 
 // Somente pessoas autenticadas e administradores podem atualizar laboratórios
-// routes.put(
-//   "/laboratorio/:id",
-//   // authenticateToken,
-//   // authorizeAdmin,
-//   Laboratorio.atualizarLaboratorio
-// );
+routes.put(
+  "/laboratorio/:id",
+  //   // authenticateToken,
+  //   // authorizeAdmin,
+  Laboratorio.atualizarLaboratorio
+);
 
 // Somente pessoas autenticadas e administradores podem deletar laboratórios
 // routes.delete(

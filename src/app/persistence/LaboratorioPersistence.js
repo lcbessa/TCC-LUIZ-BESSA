@@ -35,18 +35,36 @@ export default {
       };
     }
   },
+  async atualizarLaboratorio(id, laboratorioASerAtualizado) {
+    try {
+      const laboratorioAtualizado = await prisma.laboratorio.update({
+        where: { id: parseInt(id) },
+        data: {
+          nome: laboratorioASerAtualizado.nome,
+          sigla: laboratorioASerAtualizado.sigla,
+        },
+      });
+
+      return {
+        status: 200,
+        sucess: laboratorioAtualizado,
+      };
+    } catch (error) {
+      console.error("Erro ao atualizar laboratório", error);
+      return {
+        status: 500,
+        error: "Não foi possível atualizar o laboratório!",
+      };
+    }
+  },
+
+  // funções auxiliares
   async obterLaboratorioPorId(id) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({
         where: { id: parseInt(id) },
         include: { reservas: true },
       });
-      if (!laboratorio) {
-        return {
-          status: 404,
-          error: "Laboratório não encontrado!",
-        };
-      }
       return {
         status: 200,
         sucess: laboratorio,
@@ -59,17 +77,11 @@ export default {
       };
     }
   },
-  async obterLaboratorioPorCampo(campo, nomeCampo) {
+  async obterLaboratorioPorCampo(id, campo, nomeCampo) {
     try {
       const laboratorio = await prisma.laboratorio.findUnique({
-        where: { [campo]: nomeCampo },
+        where: { [campo]: nomeCampo, NOT: { id: Number(id) } },
       });
-      if (!laboratorio) {
-        return {
-          status: 404,
-          error: "Laboratório não encontrado!",
-        };
-      }
       return {
         status: 200,
         sucess: laboratorio,

@@ -8,6 +8,7 @@ export default {
       // Verifica se os campos obrigatórios estão presentes
       resposta = verificarCampoObrigatorio(nome, "nome");
       if (resposta) return response.status(resposta.status).json(resposta);
+
       resposta = verificarCampoObrigatorio(sigla, "sigla");
       if (resposta) return response.status(resposta.status).json(resposta);
 
@@ -44,7 +45,7 @@ export default {
       resposta = validarId(id);
       if (resposta) return response.status(resposta.status).json(resposta);
 
-      resposta = await LaboratorioBusiness.obterLaboratorioPorId(id);
+      resposta = await LaboratorioBusiness.listarUmLaboratorio(id);
       return response.status(resposta.status).json(resposta);
     } catch (error) {
       console.error("Erro ao listar laboratório", error);
@@ -54,8 +55,36 @@ export default {
       });
     }
   },
+  async atualizarLaboratorio(request, response) {
+    try {
+      const { id } = request.params;
+      const { nome, sigla } = request.body;
+      let resposta = null;
+      resposta = validarId(id);
+      if (resposta) return response.status(resposta.status).json(resposta);
+
+      resposta = verificarCampoObrigatorio(nome, "nome");
+      if (resposta) return response.status(resposta.status).json(resposta);
+
+      resposta = verificarCampoObrigatorio(sigla, "sigla");
+      if (resposta) return response.status(resposta.status).json(resposta);
+
+      resposta = await LaboratorioBusiness.atualizarLaboratorio(id, {
+        nome,
+        sigla,
+      });
+      return response.status(resposta.status).json(resposta);
+    } catch (error) {
+      console.error("Erro ao atualizar laboratório", error);
+      return response.status(500).json({
+        status: 500,
+        error: "Não foi possível atualizar o laboratório!",
+      });
+    }
+  },
 };
-// Função auxiliar para verificar se o campo obrigatório está presente
+
+// Métodos auxiliares
 function verificarCampoObrigatorio(valor, campo) {
   if (!valor || valor == undefined || valor == null || valor == "") {
     return {
