@@ -1,4 +1,5 @@
 import LaboratorioBusiness from "../business/LaboratorioBusiness";
+import { validarId, verificarCampoObrigatorio } from "../../utils/validacoes";
 
 export default {
   async criarLaboratorio(request, response) {
@@ -100,21 +101,3 @@ export default {
     }
   },
 };
-
-// Métodos auxiliares
-function verificarCampoObrigatorio(valor, campo) {
-  if (!valor || valor == undefined || valor == null || valor == "") {
-    return {
-      status: 400,
-      error: `O campo '${campo}' deve ser obrigatório.`,
-    };
-  }
-}
-function validarId(id) {
-  if (isNaN(id)) {
-    return {
-      status: 400,
-      error: "O id deve ser um número.",
-    };
-  }
-}

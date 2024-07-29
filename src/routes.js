@@ -1,25 +1,25 @@
 import { Router } from "express";
-import Usuario from "./app/controllers/UsuarioController";
-import Laboratorio from "./app/controllers/LaboratorioController";
+import UsuarioController from "./app/controllers/UsuarioController";
 import Reserva from "./app/controllers/ReservaController";
 import { authenticateToken, authorizeAdmin } from "./app/middlewares/Auth";
 import LaboratorioController from "./app/controllers/LaboratorioController";
+import UsuarioController from "./app/controllers/UsuarioController";
 
 const routes = Router();
 
 /**
  * Rotas para Usuários
  */
-// routes.post("/registrar", Usuario.criarUsuario);
-// routes.post("/login", Usuario.Login);
+routes.post("/registrar", UsuarioController.criarUsuario);
+routes.post("/login", UsuarioController.Login);
 
 // Fins de teste
-// routes.get(
-//   "/usuarios",
-//   // authenticateToken,
-//   // authorizeAdmin,
-//   Usuario.ListarUsuarios
-// );
+routes.get(
+  "/usuarios",
+  //   // authenticateToken,
+  //   // authorizeAdmin,
+  UsuarioController.ListarUsuarios
+);
 
 /**
  * Rotas para Laboratórios
