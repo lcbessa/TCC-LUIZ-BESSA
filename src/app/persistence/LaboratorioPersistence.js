@@ -57,7 +57,41 @@ export default {
       };
     }
   },
-
+  async deletarLaboratorio(id) {
+    try {
+      await prisma.laboratorio.delete({
+        where: { id: parseInt(id) },
+      });
+      return {
+        status: 200,
+        sucess: "Laboratório deletado com sucesso!",
+      };
+    } catch (error) {
+      console.error("Erro ao deletar laboratório", error);
+      return {
+        status: 500,
+        error: "Não foi possível deletar o laboratório!",
+      };
+    }
+  },
+  async desativarLaboratorio(id) {
+    try {
+      const laboratorioDesativado = await prisma.laboratorio.update({
+        where: { id: parseInt(id) },
+        data: { ativo: false },
+      });
+      return {
+        status: 200,
+        sucess: laboratorioDesativado,
+      };
+    } catch (error) {
+      console.error("Erro ao desativar laboratório", error);
+      return {
+        status: 500,
+        error: "Não foi possível desativar o laboratório!",
+      };
+    }
+  },
   // funções auxiliares
   async obterLaboratorioPorId(id) {
     try {

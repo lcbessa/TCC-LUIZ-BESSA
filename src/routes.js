@@ -51,16 +51,16 @@ routes.put(
   "/laboratorio/:id",
   //   // authenticateToken,
   //   // authorizeAdmin,
-  Laboratorio.atualizarLaboratorio
+  LaboratorioController.atualizarLaboratorio
 );
 
 // Somente pessoas autenticadas e administradores podem deletar laboratórios
-// routes.delete(
-//   "/laboratorio/:id",
-//   // authenticateToken,
-//   // authorizeAdmin,
-//   Laboratorio.deletarLaboratorio
-// );
+routes.delete(
+  "/laboratorio/:id",
+  //   // authenticateToken,
+  //   // authorizeAdmin,
+  LaboratorioController.deletarLaboratorio
+);
 
 /**
  * Rotas para Reservas

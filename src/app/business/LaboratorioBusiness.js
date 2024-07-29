@@ -58,7 +58,12 @@ export default {
     try {
       let resposta = null;
       resposta = await this.obterLaboratorioPorId(id);
-      return resposta;
+      if (!resposta.sucess) {
+        return {
+          status: 404,
+          error: "Laboratório não encontrado!",
+        };
+      }
     } catch (error) {
       console.error("Erro ao listar laboratório", error);
       return {
@@ -117,16 +122,51 @@ export default {
       };
     }
   },
-  // Métodos auxiliares
-  async obterLaboratorioPorId(id) {
-    let resposta = await LaboratorioPersistence.obterLaboratorioPorId(id);
-    if (!resposta.sucess) {
+  async deletarLaboratorio(id) {
+    try {
+      let laboratorioASerExcluido = null;
+      laboratorioASerExcluido = await this.obterLaboratorioPorId(id);
+      if (!laboratorioASerExcluido.sucess) {
+        return {
+          status: 404,
+          error: "Laboratório não encontrado!",
+        };
+      }
+      console.log(laboratorioASerExcluido);
+      if (!laboratorioASerExcluido.sucess.reservas.length) {
+        return await LaboratorioPersistence.deletarLaboratorio(id);
+      } else {
+        const dataAtual = new Date();
+        console.log(dataAtual);
+        const reservasFuturas = laboratorioASerExcluido.sucess.reservas.filter(
+          (reserva) => reserva.dataHoraInicio >= dataAtual
+        );
+        console.log(reservasFuturas);
+        if (reservasFuturas.length === 0) {
+          await LaboratorioPersistence.desativarLaboratorio(id);
+          return {
+            status: 200,
+            sucess: "Laboratório desativado com sucesso!",
+          };
+        } else {
+          return {
+            status: 400,
+            error:
+              "Laboratório não pode ser desativado, pois tem reservas futuras ou em andamento!",
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao deletar laboratório", error);
       return {
-        status: 404,
-        error: "Laboratório não encontrado!",
+        status: 500,
+        error: "Não foi possível deletar o laboratório!",
       };
     }
-    return resposta;
+  },
+  // Métodos auxiliares
+  async obterLaboratorioPorId(id) {
+    return await LaboratorioPersistence.obterLaboratorioPorId(id);
   },
   async obterLaboratorioPorCampo(id, campo, nomeCampo) {
     return await LaboratorioPersistence.obterLaboratorioPorCampo(
