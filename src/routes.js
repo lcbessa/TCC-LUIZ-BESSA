@@ -1,6 +1,6 @@
 import { Router } from "express";
 import UsuarioController from "./app/controllers/UsuarioController";
-import Reserva from "./app/controllers/ReservaController";
+import ReservaController from "./app/controllers/ReservaController";
 import { authenticateToken, authorizeAdmin } from "./app/middlewares/Auth";
 import LaboratorioController from "./app/controllers/LaboratorioController";
 import UsuarioController from "./app/controllers/UsuarioController";
@@ -66,37 +66,37 @@ routes.delete(
  * Rotas para Reservas
  */
 // Somente pessoas autenticadas podem criar reservas
-// routes.post(
-//   "/reservas",
-//   // authenticateToken,
-//   Reserva.criarReserva
-// );
+routes.post(
+  "/reservas",
+  //   // authenticateToken,
+  ReservaController.criarReserva
+);
 
 // Somente pessoas autenticadas podem listar reservas
-// routes.get(
-//   "/reservas",
-//   // authenticateToken,
-//   Reserva.listarReservas
-// );
+routes.get(
+  "/reservas",
+  //   // authenticateToken,
+  ReservaController.listarReservas
+);
 
 // Somente pessoas autenticadas podem listar uma reserva
-// routes.get(
-//   "/reserva/:id",
-//   // authenticateToken,
-//   Reserva.listarUmaReserva
-// );
+routes.get(
+  "/reserva/:id",
+  //   // authenticateToken,
+  ReservaController.listarUmaReserva
+);
 
 // Somente pessoas autenticadas podem atualizar reservas
-// routes.put(
-//   "/reserva/:id",
-//   // authenticateToken,
-//   Reserva.atualizarReserva
-// );
+routes.put(
+  "/reserva/:id",
+  //   // authenticateToken,
+  ReservaController.atualizarReserva
+);
 
 // Somente pessoas autenticadas podem deletar reservas
-// routes.delete(
-//   "/reserva/:id",
-//   // authenticateToken,
-//   Reserva.deletarReserva
-// );
+routes.delete(
+  "/reserva/:id",
+  //   // authenticateToken,
+  ReservaController.deletarReserva
+);
 export { routes };

@@ -1,5 +1,5 @@
 import UsuarioBusiness from "../business/UsuarioBusiness";
-import { verificarCampoObrigatorio, gerarToken } from "../../utils/validacoes";
+import { verificarCampoObrigatorio } from "../../utils/validacoes";
 
 export default {
   async criarUsuario(request, response) {
