@@ -16,7 +16,7 @@ routes.post("/login", UsuarioController.Login);
 // Fins de teste
 routes.get(
   "/usuarios",
-  //   // authenticateToken,
+  authenticateToken,
   //   // authorizeAdmin,
   UsuarioController.ListarUsuarios
 );
@@ -35,21 +35,21 @@ routes.post(
 // Somente pessoas autenticadas podem listar laboratórios
 routes.get(
   "/laboratorios",
-  //   // authenticateToken,
+  authenticateToken,
   LaboratorioController.listarLaboratorios
 );
 
 // Somente pessoas autenticadas podem listar um laboratório
 routes.get(
   "/laboratorio/:id",
-  //   // authenticateToken,
+  authenticateToken,
   LaboratorioController.listarUmLaboratorio
 );
 
 // Somente pessoas autenticadas e administradores podem atualizar laboratórios
 routes.put(
   "/laboratorio/:id",
-  //   // authenticateToken,
+  authenticateToken,
   //   // authorizeAdmin,
   LaboratorioController.atualizarLaboratorio
 );
@@ -57,7 +57,7 @@ routes.put(
 // Somente pessoas autenticadas e administradores podem deletar laboratórios
 routes.delete(
   "/laboratorio/:id",
-  //   // authenticateToken,
+  authenticateToken,
   //   // authorizeAdmin,
   LaboratorioController.deletarLaboratorio
 );
@@ -66,37 +66,33 @@ routes.delete(
  * Rotas para Reservas
  */
 // Somente pessoas autenticadas podem criar reservas
-routes.post(
-  "/reservas",
-  //   // authenticateToken,
-  ReservaController.criarReserva
-);
+routes.post("/reservas", authenticateToken, ReservaController.criarReserva);
 
 // Somente pessoas autenticadas podem listar reservas
-routes.get(
-  "/reservas",
-  //   // authenticateToken,
-  ReservaController.listarReservas
-);
+// routes.get(
+//   "/reservas",
+// authenticateToken,
+//   ReservaController.listarReservas
+// );
 
-// Somente pessoas autenticadas podem listar uma reserva
-routes.get(
-  "/reserva/:id",
-  //   // authenticateToken,
-  ReservaController.listarUmaReserva
-);
+// // Somente pessoas autenticadas podem listar uma reserva
+// routes.get(
+//   "/reserva/:id",
+// authenticateToken,
+//   ReservaController.listarUmaReserva
+// );
 
-// Somente pessoas autenticadas podem atualizar reservas
-routes.put(
-  "/reserva/:id",
-  //   // authenticateToken,
-  ReservaController.atualizarReserva
-);
+// // Somente pessoas autenticadas podem atualizar reservas
+// routes.put(
+//   "/reserva/:id",
+// authenticateToken,
+//   ReservaController.atualizarReserva
+// );
 
-// Somente pessoas autenticadas podem deletar reservas
-routes.delete(
-  "/reserva/:id",
-  //   // authenticateToken,
-  ReservaController.deletarReserva
-);
+// // Somente pessoas autenticadas podem deletar reservas
+// routes.delete(
+//   "/reserva/:id",
+// authenticateToken,
+//   ReservaController.deletarReserva
+// );
 export { routes };

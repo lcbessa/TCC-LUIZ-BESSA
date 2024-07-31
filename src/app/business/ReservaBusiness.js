@@ -8,7 +8,7 @@ export default {
       dataAtual.setHours(dataAtual.getHours() - 3);
 
       // Uma Reserva só pode ser feita para datas futuras, não passadas.
-      if (isBefore(reserva.dataInicio, dataAtual)) {
+      if (isBefore(reserva.dataHoraInicio, dataAtual)) {
         return {
           status: 400,
           error:
@@ -17,7 +17,9 @@ export default {
       }
 
       // A reserva deve ter no mínimo 1 hora de duração.
-      if (differenceInMinutes(reserva.dataFim, reserva.dataInicio) < 60) {
+      if (
+        differenceInMinutes(reserva.dataHoraFim, reserva.dataHoraInicio) < 60
+      ) {
         return {
           status: 400,
           error: "A reserva deve ter no mínimo 1 hora de duração.",
@@ -25,16 +27,19 @@ export default {
       }
 
       // A reserva no mesmo dia (A reserva deve começar e terminar no mesmo dia).
-      if (!isSameDay(reserva.dataInicio, reserva.dataFim)) {
-        return response.status(400).send({
+      if (!isSameDay(reserva.dataHoraInicio, reserva.dataHoraFim)) {
+        console.log("reserva.dataHoraInicio", reserva.dataHoraInicio);
+        console.log("reserva.dataHoraFim", reserva.dataHoraFim);
+        return {
+          status: 400,
           error: "A reserva deve começar e terminar no mesmo dia.",
-        });
+        };
       }
 
       // Restrição de horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
       const erroHorario = this.validarHorarioReserva(
-        reserva.dataInicio,
-        reserva.dataFim
+        reserva.dataHoraInicio,
+        reserva.dataHoraFim
       );
       if (erroHorario) {
         return erroHorario;
@@ -43,8 +48,8 @@ export default {
       // A reserva não pode ser feita para um laboratório que já tenha uma reserva no mesmo horário.
       const conflitoDeReserva = await this.conflitoReserva(
         reserva.laboratorioId,
-        reserva.dataInicio,
-        reserva.dataFim
+        reserva.dataHoraInicio,
+        reserva.dataHoraFim
       );
 
       if (conflitoDeReserva) {
@@ -62,12 +67,12 @@ export default {
   },
 
   // Métodos auxiliares
-  validarHorarioReserva(dataInicio, dataFim) {
+  validarHorarioReserva(dataHoraInicio, dataHoraFim) {
     if (
-      getMinutes(dataInicio) % 30 !== 0 ||
-      getMinutes(dataFim) % 30 !== 0 ||
-      dataInicio.getSeconds() !== 0 ||
-      dataFim.getSeconds() !== 0
+      getMinutes(dataHoraInicio) % 30 !== 0 ||
+      getMinutes(dataHoraFim) % 30 !== 0 ||
+      dataHoraInicio.getSeconds() !== 0 ||
+      dataHoraFim.getSeconds() !== 0
     ) {
       return response.status(400).send({
         error:
@@ -76,24 +81,30 @@ export default {
     }
   },
 
-  async conflitoReserva(laboratorioId, dataInicio, dataFim) {
-    const reservas = await ReservaPersistence.buscarReservasPorLaboratorio(
-      laboratorioId
+  async conflitoReserva(laboratorioId, dataHoraInicio, dataHoraFim) {
+    const dataReferencia = dataHoraInicio;
+    const reservas = await ReservaPersistence.buscarReservasDoDiaDoLaboratorio(
+      laboratorioId,
+      dataReferencia
     );
-    if (reservas.sucess) {
-      for (const reserva of reservas) {
-        if (
-          (isBefore(dataInicio, reserva.dataInicio) &&
-            isBefore(dataFim, reserva.dataInicio)) ||
-          (isBefore(reserva.dataFim, dataInicio) &&
-            isBefore(reserva.dataFim, dataFim))
-        ) {
-          return {
-            status: 400,
-            error: "Conflito de horários de reserva",
-          };
-        }
+    if (reservas.sucess.length > 0) {
+      const conflito = reservas.sucess.some((reserva) => {
+        return (
+          (reserva.dataHoraInicio <= dataHoraInicio &&
+            reserva.dataHoraFim >= dataHoraInicio) || // conflito no início
+          (reserva.dataHoraInicio <= dataHoraFim &&
+            reserva.dataHoraFim >= dataHoraFim) || // Conflito no fim
+          (reserva.dataHoraInicio >= dataHoraInicio &&
+            reserva.dataHoraFim <= dataHoraFim) // Conflito total
+        );
+      });
+      if (conflito) {
+        return {
+          status: 400,
+          error: "Conflito de horários de reserva",
+        };
       }
     }
+    return null;
   },
 };
