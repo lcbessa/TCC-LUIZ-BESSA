@@ -69,25 +69,21 @@ routes.delete(
 routes.post("/reservas", authenticateToken, ReservaController.criarReserva);
 
 // Somente pessoas autenticadas podem listar reservas
-// routes.get(
-//   "/reservas",
-// authenticateToken,
-//   ReservaController.listarReservas
-// );
+routes.get("/reservas", authenticateToken, ReservaController.listarReservas);
 
 // // Somente pessoas autenticadas podem listar uma reserva
-// routes.get(
-//   "/reserva/:id",
-// authenticateToken,
-//   ReservaController.listarUmaReserva
-// );
+routes.get(
+  "/reserva/:id",
+  authenticateToken,
+  ReservaController.listarUmaReserva
+);
 
 // // Somente pessoas autenticadas podem atualizar reservas
-// routes.put(
-//   "/reserva/:id",
-// authenticateToken,
-//   ReservaController.atualizarReserva
-// );
+routes.put(
+  "/reserva/:id",
+  authenticateToken,
+  ReservaController.atualizarReserva
+);
 
 // // Somente pessoas autenticadas podem deletar reservas
 // routes.delete(

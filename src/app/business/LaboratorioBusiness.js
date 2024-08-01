@@ -49,15 +49,15 @@ export default {
   async listarUmLaboratorio(id) {
     try {
       const laboratorioProcurado = await this.obterLaboratorioPorId(id);
-      if (!laboratorioProcurado.sucess) {
+      if (!laboratorioProcurado.sucess || !laboratorioProcurado.sucess.ativo) {
         return {
           status: 400,
-          error: "Laboratório não encontrado!",
+          error: "Laboratório não encontrado ou inativo!",
         };
       }
       return laboratorioProcurado;
     } catch (error) {
-      console.error("Erro ao listar laboratórioAQ", error);
+      console.error("Erro ao listar laboratório", error);
       return {
         status: 500,
         error: "Não foi possível listar o laboratório!",

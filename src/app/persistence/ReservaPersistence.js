@@ -30,6 +30,27 @@ export default {
       };
     }
   },
+  async atualizarReserva(id, reservaASerAtualizada) {
+    try {
+      const reservaAtualizada = await prisma.reserva.update({
+        where: { id: parseInt(id) },
+        data: {
+          dataHoraInicio: reservaASerAtualizada.dataHoraInicio,
+          dataHoraFim: reservaASerAtualizada.dataHoraFim,
+        },
+      });
+      return {
+        status: 200,
+        sucess: reservaAtualizada,
+      };
+    } catch (error) {
+      console.error("Erro ao atualizar reserva", error);
+      return {
+        status: 500,
+        error: "Não foi possível atualizar a reserva!",
+      };
+    }
+  },
   async buscarReservasDoDiaDoLaboratorio(laboratorioId, dataReferencia) {
     const inicioDoDia = startOfDay(dataReferencia);
     inicioDoDia.setHours(inicioDoDia.getHours() - 3);
@@ -51,5 +72,47 @@ export default {
       status: 200,
       sucess: reservasDoLaboratorio,
     };
+  },
+  async obterUmaReservaPorId(id) {
+    try {
+      const reserva = await prisma.reserva.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          laboratorio: true,
+          usuario: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            },
+          },
+        },
+      });
+      return {
+        status: 200,
+        sucess: reserva,
+      };
+    } catch (error) {
+      console.error("Erro ao buscar a reservas", error);
+      return {
+        status: 500,
+        error: "Não foi possível buscar a reserva!",
+      };
+    }
+  },
+  async listarReservas(ordemCrescente) {
+    try {
+      const reservas = await prisma.reserva.findMany(ordemCrescente);
+      return {
+        status: 200,
+        sucess: reservas,
+      };
+    } catch (error) {
+      console.error("Erro ao listar reservas", error);
+      return {
+        status: 500,
+        error: "Não foi possível listar as reservas!",
+      };
+    }
   },
 };
