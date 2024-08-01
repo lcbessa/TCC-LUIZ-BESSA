@@ -17,7 +17,7 @@ routes.post("/login", UsuarioController.Login);
 routes.get(
   "/usuarios",
   authenticateToken,
-  //   // authorizeAdmin,
+  authorizeAdmin,
   UsuarioController.ListarUsuarios
 );
 
@@ -28,8 +28,8 @@ routes.get(
 // Somente pessoas autenticadas e administradores podem criar laboratórios
 routes.post(
   "/laboratorios",
-  // authenticateToken,
-  // authorizeAdmin,
+  authenticateToken,
+  authorizeAdmin,
   LaboratorioController.criarLaboratorio
 );
 // Somente pessoas autenticadas podem listar laboratórios
@@ -50,7 +50,7 @@ routes.get(
 routes.put(
   "/laboratorio/:id",
   authenticateToken,
-  //   // authorizeAdmin,
+  authorizeAdmin,
   LaboratorioController.atualizarLaboratorio
 );
 
@@ -58,7 +58,7 @@ routes.put(
 routes.delete(
   "/laboratorio/:id",
   authenticateToken,
-  //   // authorizeAdmin,
+  authorizeAdmin,
   LaboratorioController.deletarLaboratorio
 );
 
