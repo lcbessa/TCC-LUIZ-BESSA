@@ -31,6 +31,4 @@ Siga os passos abaixo para iniciar a aplicação:
    
     `npm run dev`
 
-Isso iniciará a aplicação em modo de desenvolvimento. 
-
-Obs: No diretório documentos, contêm os arquivos: Regras de Negócio, Driagrama de classe, Script do Banco e as requests para usar nos testes.
+Isso iniciará a aplicação em modo de desenvolvimento.
