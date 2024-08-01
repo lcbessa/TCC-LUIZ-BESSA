@@ -1,11 +1,22 @@
 import { isBefore, isSameDay, differenceInMinutes, getMinutes } from "date-fns";
 import ReservaPersistence from "../persistence/ReservaPersistence";
-
+import laboratorioPersistence from "../persistence/LaboratorioPersistence";
 export default {
   async criarReserva(reserva) {
     try {
       const dataAtual = new Date();
       dataAtual.setHours(dataAtual.getHours() - 3);
+
+      // Relação com laboratório( O laboratório deve existir para que a reserva seja feita.)
+      const laboratorio = await laboratorioPersistence.obterLaboratorioPorId(
+        reserva.laboratorioId
+      );
+      if (!laboratorio || !laboratorio.ativo) {
+        return {
+          status: 400,
+          error: "Laboratório não existe ou está inativo.",
+        };
+      }
 
       // Uma Reserva só pode ser feita para datas futuras, não passadas.
       if (isBefore(reserva.dataHoraInicio, dataAtual)) {
