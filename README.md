@@ -32,3 +32,5 @@ Siga os passos abaixo para iniciar a aplicação:
     `npm run dev`
 
 Isso iniciará a aplicação em modo de desenvolvimento.
+
+6. **Testar Endpoints**: Utilize o arquivo [testes_insomnia.json](https://github.com/lcbessa/crud-sem-isolamento-de-regras-de-negocio/blob/master/testes_insomnia.json) que contém os endpoints para teste. Esse arquivo pode ser importado diretamente no Insomnia para facilitar a execução dos testes.
