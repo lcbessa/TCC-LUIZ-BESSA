@@ -115,4 +115,21 @@ export default {
       };
     }
   },
+  async deletarReserva(id) {
+    try {
+      await prisma.reserva.delete({
+        where: { id: parseInt(id) },
+      });
+      return {
+        status: 200,
+        sucess: "Reserva cancelada com sucesso!",
+      };
+    } catch (error) {
+      console.error("Erro ao deletar reserva", error);
+      return {
+        status: 500,
+        error: "Não foi possível deletar a reserva!",
+      };
+    }
+  },
 };

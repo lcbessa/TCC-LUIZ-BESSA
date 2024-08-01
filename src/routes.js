@@ -86,9 +86,9 @@ routes.put(
 );
 
 // // Somente pessoas autenticadas podem deletar reservas
-// routes.delete(
-//   "/reserva/:id",
-// authenticateToken,
-//   ReservaController.deletarReserva
-// );
+routes.delete(
+  "/reserva/:id",
+  authenticateToken,
+  ReservaController.deletarReserva
+);
 export { routes };

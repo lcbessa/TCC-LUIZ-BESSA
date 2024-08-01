@@ -202,6 +202,55 @@ export default {
       };
     }
   },
+  async deletarReserva(id, usuarioId) {
+    try {
+      const ReservaProcurada = await ReservaPersistence.obterUmaReservaPorId(
+        id
+      );
+      if (!ReservaProcurada.sucess) {
+        return {
+          status: 404,
+          error: "Reserva não encontrada!",
+        };
+      }
+
+      // Verifica se o usuário que está tentando deletar a reserva é o mesmo que a criou
+      if (usuarioId !== ReservaProcurada.sucess.usuario.id) {
+        return {
+          status: 403,
+          error: "Apenas o usuário que criou a reserva pode deletá-la.",
+        };
+      }
+
+      // Se o cancelamento da reserva for feito com menos de 1 hora de antecedência, a reserva não poderá ser cancelada.
+      const dataAtualDoCancelamento = new Date();
+      dataAtualDoCancelamento.setHours(dataAtualDoCancelamento.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
+
+      const dataHoraInicioDaReservaQuePoderaSerCancelada = new Date(
+        ReservaProcurada.sucess.dataHoraInicio
+      );
+
+      const diferencaEmMinutos = differenceInMinutes(
+        dataHoraInicioDaReservaQuePoderaSerCancelada,
+        dataAtualDoCancelamento
+      );
+      if (diferencaEmMinutos < 60) {
+        return {
+          status: 400,
+          error:
+            " O cancelamento de Reserva só poderá ser feito com no mínimo 1 hora de antecedência",
+        };
+      }
+
+      return await ReservaPersistence.deletarReserva(id);
+    } catch (error) {
+      console.error("Erro ao deletar reserva", error);
+      return {
+        status: 500,
+        error: "Não foi possível deletar a reserva!",
+      };
+    }
+  },
   // Métodos auxiliares
   validarHorarioReserva(dataHoraInicio, dataHoraFim) {
     if (
