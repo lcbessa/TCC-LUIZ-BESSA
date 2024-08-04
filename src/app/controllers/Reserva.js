@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 export default {
   async criarReserva(request, response) {
     try {
-      const { dataHoraInicio, dataHoraFim, laboratorioId } = request.body;
+      let { dataHoraInicio, dataHoraFim, laboratorioId } = request.body;
 
       // Relação com Laboratório (Verifica se o laboratório está ativo)
       const laboratorio = await prisma.laboratorio.findUnique({
@@ -25,23 +25,20 @@ export default {
           .send({ error: "Laboratório não encontrado ou inativo." });
       }
 
-      const dataHoraInicioDaNovaReserva = new Date(dataHoraInicio);
-      const dataHoraFimDaNovaReserva = new Date(dataHoraFim);
+      dataHoraInicio = new Date(dataHoraInicio);
+      dataHoraFim = new Date(dataHoraFim);
       const dataAtual = new Date();
       dataAtual.setHours(dataAtual.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
 
       // Verificar se as datas e horas são válidas
-      if (
-        !isValid(dataHoraInicioDaNovaReserva) ||
-        !isValid(dataHoraFimDaNovaReserva)
-      ) {
+      if (!isValid(dataHoraInicio) || !isValid(dataHoraFim)) {
         return response.status(400).send({
           error: "As datas de início e fim da reserva não são válidas.",
         });
       }
 
       // Verificar se a data e hora de início são menores ou iguais à data e hora de fim.
-      if (dataHoraInicioDaNovaReserva > dataHoraFimDaNovaReserva) {
+      if (dataHoraInicio > dataHoraFim) {
         return response.status(400).send({
           error:
             "A data e hora de início não podem ser maiores que a data e hora de fim.",
@@ -56,7 +53,7 @@ export default {
       }
 
       // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
-      if (isBefore(dataHoraInicioDaNovaReserva, dataAtual)) {
+      if (isBefore(dataHoraInicio, dataAtual)) {
         return response.status(400).send({
           error:
             "A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.",
@@ -64,15 +61,15 @@ export default {
       }
 
       // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
-      if (!isSameDay(dataHoraInicioDaNovaReserva, dataHoraFimDaNovaReserva)) {
+      if (!isSameDay(dataHoraInicio, dataHoraFim)) {
         return response.status(400).send({
           error: "A reserva deve começar e terminar no mesmo dia.",
         });
       }
       // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
       const diferencaEmMinutos = differenceInMinutes(
-        dataHoraFimDaNovaReserva,
-        dataHoraInicioDaNovaReserva
+        dataHoraFim,
+        dataHoraInicio
       );
       if (diferencaEmMinutos < 60) {
         return response
@@ -82,10 +79,10 @@ export default {
 
       // 	Restrição de horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
       if (
-        getMinutes(dataHoraInicioDaNovaReserva) % 30 !== 0 ||
-        getMinutes(dataHoraFimDaNovaReserva) % 30 !== 0 ||
-        dataHoraInicioDaNovaReserva.getSeconds() !== 0 ||
-        dataHoraFimDaNovaReserva.getSeconds() !== 0
+        getMinutes(dataHoraInicio) % 30 !== 0 ||
+        getMinutes(dataHoraFim) % 30 !== 0 ||
+        dataHoraInicio.getSeconds() !== 0 ||
+        dataHoraFim.getSeconds() !== 0
       ) {
         return response.status(400).send({
           error:
@@ -101,22 +98,22 @@ export default {
             {
               // A nova reserva começa durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraInicioDaNovaReserva } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
-                { dataHoraFim: { gte: dataHoraInicioDaNovaReserva } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
+                { dataHoraInicio: { lte: dataHoraInicio } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
+                { dataHoraFim: { gte: dataHoraInicio } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
               ],
             },
             {
               // A nova reserva termina durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraFimDaNovaReserva } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
-                { dataHoraFim: { gte: dataHoraFimDaNovaReserva } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { lte: dataHoraFim } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraFim: { gte: dataHoraFim } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
               ],
             },
             {
               // A nova reserva engloba completamente uma reserva existente
               AND: [
-                { dataHoraInicio: { gte: dataHoraInicioDaNovaReserva } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
-                { dataHoraFim: { lte: dataHoraFimDaNovaReserva } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { gte: dataHoraInicio } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
+                { dataHoraFim: { lte: dataHoraFim } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
               ],
             },
           ],
@@ -207,7 +204,7 @@ export default {
   async atualizarReserva(request, response) {
     try {
       const { id } = request.params; // Recebe o ID da reserva a ser atualizada
-      const { dataHoraInicio, dataHoraFim } = request.body;
+      let { dataHoraInicio, dataHoraFim } = request.body;
 
       // Verifica se a reserva existe
       const reserva = await prisma.reserva.findUnique({
@@ -224,23 +221,20 @@ export default {
           error: "Apenas o usuário que criou a reserva pode atualizá-la.",
         });
       }
-      const dataHoraInicioDaNovaReserva = new Date(dataHoraInicio);
-      const dataHoraFimDaNovaReserva = new Date(dataHoraFim);
+      dataHoraInicio = new Date(dataHoraInicio);
+      dataHoraFim = new Date(dataHoraFim);
       const dataAtual = new Date();
       dataAtual.setHours(dataAtual.getHours() - 3);
 
       // Verificar se as datas e horas são válidas
-      if (
-        !isValid(dataHoraInicioDaNovaReserva) ||
-        !isValid(dataHoraFimDaNovaReserva)
-      ) {
+      if (!isValid(dataHoraInicio) || !isValid(dataHoraFim)) {
         return response.status(400).send({
           error: "As datas de início e fim da reserva não são válidas.",
         });
       }
 
       // Verificar se a data e hora de início são menores ou iguais à data e hora de fim.
-      if (dataHoraInicioDaNovaReserva > dataHoraFimDaNovaReserva) {
+      if (dataHoraInicio > dataHoraFim) {
         return response.status(400).send({
           error:
             "A data e hora de início não podem ser maiores que a data e hora de fim.",
@@ -248,7 +242,7 @@ export default {
       }
 
       // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
-      if (isBefore(dataHoraInicioDaNovaReserva, dataAtual)) {
+      if (isBefore(dataHoraInicio, dataAtual)) {
         return response.status(400).send({
           error:
             "A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.",
@@ -256,15 +250,15 @@ export default {
       }
 
       // Reserva no Mesmo Dia (A reserva deve começar e terminar no mesmo dia.)
-      if (!isSameDay(dataHoraInicioDaNovaReserva, dataHoraFimDaNovaReserva)) {
+      if (!isSameDay(dataHoraInicio, dataHoraFim)) {
         return response.status(400).send({
           error: "A reserva deve começar e terminar no mesmo dia.",
         });
       }
       // Duração Mínima de Reserva (A reserva deve ter no mínimo 1 hora de duração.)
       const diferencaEmMinutos = differenceInMinutes(
-        dataHoraFimDaNovaReserva,
-        dataHoraInicioDaNovaReserva
+        dataHoraFim,
+        dataHoraInicio
       );
       if (diferencaEmMinutos < 60) {
         return response
@@ -273,10 +267,10 @@ export default {
       }
       // Condicao de Horário da Reserva (A reserva deve começar e terminar em horas cheias ou meias horas.)
       if (
-        getMinutes(dataHoraInicioDaNovaReserva) % 30 !== 0 ||
-        getMinutes(dataHoraFimDaNovaReserva) % 30 !== 0 ||
-        dataHoraInicioDaNovaReserva.getSeconds() !== 0 ||
-        dataHoraFimDaNovaReserva.getSeconds() !== 0
+        getMinutes(dataHoraInicio) % 30 !== 0 ||
+        getMinutes(dataHoraFim) % 30 !== 0 ||
+        dataHoraInicio.getSeconds() !== 0 ||
+        dataHoraFim.getSeconds() !== 0
       ) {
         return response.status(400).send({
           error:
@@ -291,22 +285,22 @@ export default {
             {
               // A nova reserva começa durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraInicioDaNovaReserva } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
-                { dataHoraFim: { gte: dataHoraInicioDaNovaReserva } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
+                { dataHoraInicio: { lte: dataHoraInicio } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
+                { dataHoraFim: { gte: dataHoraInicio } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
               ],
             },
             {
               // A nova reserva termina durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraFimDaNovaReserva } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
-                { dataHoraFim: { gte: dataHoraFimDaNovaReserva } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { lte: dataHoraFim } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraFim: { gte: dataHoraFim } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
               ],
             },
             {
               // A nova reserva engloba completamente uma reserva existente
               AND: [
-                { dataHoraInicio: { gte: dataHoraInicioDaNovaReserva } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
-                { dataHoraFim: { lte: dataHoraFimDaNovaReserva } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { gte: dataHoraInicio } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
+                { dataHoraFim: { lte: dataHoraFim } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
               ],
             },
           ],
@@ -359,10 +353,11 @@ export default {
       // Se o cancelamento da reserva for feito com menos de 1 hora de antecedência, a reserva não poderá ser cancelada.
       const dataAtualDoCancelamento = new Date();
       dataAtualDoCancelamento.setHours(dataAtualDoCancelamento.getHours() - 3); // Ajusta o fuso horário para o horário de Brasília
-      const dataHoraInicioDaNovaReservaDaReservaQuePoderaSerCancelada =
-        new Date(reserva.dataHoraInicio);
+      const dataHoraInicioDaReservaQuePoderaSerCancelada = new Date(
+        reserva.dataHoraInicio
+      );
       const diferencaEmMinutos = differenceInMinutes(
-        dataHoraInicioDaNovaReservaDaReservaQuePoderaSerCancelada,
+        dataHoraInicioDaReservaQuePoderaSerCancelada,
         dataAtualDoCancelamento
       );
       if (diferencaEmMinutos < 60) {
