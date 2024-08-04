@@ -240,6 +240,11 @@ export default {
             "A data e hora de início não podem ser maiores que a data e hora de fim.",
         });
       }
+      if (reserva.dataHoraFim < dataAtual) {
+        return response
+          .status(400)
+          .send({ error: "Reserva não pode ser atualizada, pois já ocorreu." });
+      }
 
       // Reservas Futuras Apenas (A data da reserva deve ser uma data futura ou o dia de hoje com hora futura.)
       if (isBefore(dataHoraInicio, dataAtual)) {
