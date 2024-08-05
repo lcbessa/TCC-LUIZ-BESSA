@@ -1,5 +1,5 @@
 {
-  "name": "prisma",
+  "name": "crud-sem-isolamento-de-regras-de-negocio",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
