@@ -7,7 +7,7 @@ export default {
   async criarLaboratorio(request, response) {
     try {
       const { nome, sigla } = request.body;
-
+      // RN11 - O nome do Laboratório deve ser obrigatório.
       if (!nome) {
         return response
           .status(400)
@@ -16,13 +16,13 @@ export default {
       const laboratorioComNome = await prisma.laboratorio.findFirst({
         where: { nome },
       });
-
+      // RN12 - O nome do Laboratório deve ser único.
       if (laboratorioComNome) {
         return response
           .status(400)
           .send({ error: "Laboratório com mesmo nome já existe!" });
       }
-
+      // RN13 - A sigla do Laboratório deve ser obrigatória.
       if (!sigla) {
         return response
           .status(400)
@@ -117,7 +117,7 @@ export default {
           .status(404)
           .send({ error: "Laboratório não encontrado ou inativo." });
       }
-
+      // RN11 - O nome do Laboratório deve ser obrigatório.
       if (!nome) {
         return response
           .status(400)
@@ -127,13 +127,13 @@ export default {
       const laboratorioComNome = await prisma.laboratorio.findFirst({
         where: { nome, NOT: { id: Number(id) } },
       });
-
+      // RN12 - O nome do Laboratório deve ser único.
       if (laboratorioComNome) {
         return response
           .status(400)
           .send({ error: "Laboratório com mesmo nome já existe!" });
       }
-
+      // RN13 - A sigla do Laboratório deve ser obrigatória.
       if (!sigla) {
         return response
           .status(400)
