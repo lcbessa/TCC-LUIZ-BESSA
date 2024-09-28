@@ -89,8 +89,7 @@ export default {
             "A reserva deve começar e terminar em horas cheias ou meias horas.",
         });
       }
-
-      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
+      // RN33 - Não pode haver mais de uma Reserva para o mesmo Laboratório no mesmo horário.
       const conflito = await prisma.reserva.findFirst({
         where: {
           laboratorioId,
@@ -98,22 +97,22 @@ export default {
             {
               // A nova reserva começa durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraInicio } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
-                { dataHoraFim: { gte: dataHoraInicio } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
+                { dataHoraInicio: { lte: dataHoraInicio } },
+                { dataHoraFim: { gte: dataHoraInicio } },
               ],
             },
             {
               // A nova reserva termina durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraFim } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
-                { dataHoraFim: { gte: dataHoraFim } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { lte: dataHoraFim } },
+                { dataHoraFim: { gte: dataHoraFim } },
               ],
             },
             {
               // A nova reserva engloba completamente uma reserva existente
               AND: [
-                { dataHoraInicio: { gte: dataHoraInicio } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
-                { dataHoraFim: { lte: dataHoraFim } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { gte: dataHoraInicio } },
+                { dataHoraFim: { lte: dataHoraFim } },
               ],
             },
           ],
@@ -283,29 +282,29 @@ export default {
         });
       }
 
-      // Conflito de Horários de Reserva (Não pode haver conflito de horários de reserva)
+      // RN33 - Não pode haver mais de uma Reserva para o mesmo Laboratório no mesmo horário.
       const conflito = await prisma.reserva.findFirst({
         where: {
           OR: [
             {
               // A nova reserva começa durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraInicio } }, // A reserva existente começa antes ou no mesmo instante que a nova reserva
-                { dataHoraFim: { gte: dataHoraInicio } }, // A reserva existente termina depois ou no mesmo instante que o início da nova reserva
+                { dataHoraInicio: { lte: dataHoraInicio } },
+                { dataHoraFim: { gte: dataHoraInicio } },
               ],
             },
             {
               // A nova reserva termina durante uma reserva existente
               AND: [
-                { dataHoraInicio: { lte: dataHoraFim } }, // A reserva existente começa antes ou no mesmo instante que o fim da nova reserva
-                { dataHoraFim: { gte: dataHoraFim } }, // A reserva existente termina depois ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { lte: dataHoraFim } },
+                { dataHoraFim: { gte: dataHoraFim } },
               ],
             },
             {
               // A nova reserva engloba completamente uma reserva existente
               AND: [
-                { dataHoraInicio: { gte: dataHoraInicio } }, // A reserva existente começa depois ou no mesmo instante que o início da nova reserva
-                { dataHoraFim: { lte: dataHoraFim } }, // A reserva existente termina antes ou no mesmo instante que o fim da nova reserva
+                { dataHoraInicio: { gte: dataHoraInicio } },
+                { dataHoraFim: { lte: dataHoraFim } },
               ],
             },
           ],
